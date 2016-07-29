@@ -19,7 +19,7 @@ fi
 git -C "$FULLSRC" clean -dfx "BaseTools"
 
 # clean destination
-rm -Rf "$DST/*"
+rm -Rf "$DST/"*
 
 # copy minimal set of packages
 cp -R "$FULLSRC/ArmPkg" "$DST/ArmPkg"
