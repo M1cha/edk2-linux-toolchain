@@ -38,6 +38,8 @@ cp -R "$FULLSRC/StdLib" "$DST/StdLib"
 cp -R "$FULLSRC/StdLibPrivateInternalFiles" "$DST/StdLibPrivateInternalFiles"
 cp -R "$FULLSRC/UefiCpuPkg" "$DST/UefiCpuPkg"
 cp    "$FULLSRC/edksetup.sh" "$DST/edksetup.sh"
+mkdir -p "$DST/AppPkg/Applications"
+cp -R "$FULLSRC/AppPkg/Applications/Lua" "$DST/AppPkg/Applications/Lua"
 
 # compile BaseTools
 make -C "$FULLSRC/BaseTools"
@@ -47,3 +49,6 @@ find "$FULLSRC/BaseTools" -name "*.o"  -o -name "*.pyc" -o -name "*.d" -o -name 
 
 # copy BaseTools
 cp -R "$FULLSRC/BaseTools" "$DST/BaseTools"
+
+# copy our dsc templates
+cp -R "dsc_templates" "$DST/BaseTools/dsc_templates"
