@@ -42,7 +42,7 @@ mkdir -p "$DST/AppPkg/Applications"
 cp -R "$FULLSRC/AppPkg/Applications/Lua" "$DST/AppPkg/Applications/Lua"
 
 # compile BaseTools
-make -C "$FULLSRC/BaseTools"
+MAKEFLAGS= make -C "$FULLSRC/BaseTools"
 
 # remove object files
 find "$FULLSRC/BaseTools" -name "*.o"  -o -name "*.pyc" -o -name "*.d" -o -name "*.o" | xargs rm
