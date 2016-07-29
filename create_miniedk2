@@ -1,0 +1,49 @@
+#!/bin/bash
+
+set -e
+
+FULLSRC="$1"
+DST="$2"
+
+if [ ! -d "$FULLSRC" ];then
+    echo "'$FULLSRC' doesn't exist"
+    exit 1
+fi
+
+if [ ! -d "$DST" ];then
+    echo "'$DST' doesn't exist"
+    exit 1
+fi
+
+# clean BaseTools
+git -C "$FULLSRC" clean -dfx "BaseTools"
+
+# clean destination
+rm -Rf "$DST/*"
+
+# copy minimal set of packages
+cp -R "$FULLSRC/ArmPkg" "$DST/ArmPkg"
+cp -R "$FULLSRC/CryptoPkg" "$DST/CryptoPkg"
+cp -R "$FULLSRC/EmbeddedPkg" "$DST/EmbeddedPkg"
+cp -R "$FULLSRC/IntelFrameworkModulePkg" "$DST/IntelFrameworkModulePkg"
+cp -R "$FULLSRC/IntelFrameworkPkg" "$DST/IntelFrameworkPkg"
+cp -R "$FULLSRC/MdeModulePkg" "$DST/MdeModulePkg"
+cp -R "$FULLSRC/MdePkg" "$DST/MdePkg"
+cp -R "$FULLSRC/NetworkPkg" "$DST/NetworkPkg"
+cp -R "$FULLSRC/OptionRomPkg" "$DST/OptionRomPkg"
+cp -R "$FULLSRC/SecurityPkg" "$DST/SecurityPkg"
+cp -R "$FULLSRC/ShellPkg" "$DST/ShellPkg"
+cp -R "$FULLSRC/SourceLevelDebugPkg" "$DST/SourceLevelDebugPkg"
+cp -R "$FULLSRC/StdLib" "$DST/StdLib"
+cp -R "$FULLSRC/StdLibPrivateInternalFiles" "$DST/StdLibPrivateInternalFiles"
+cp -R "$FULLSRC/UefiCpuPkg" "$DST/UefiCpuPkg"
+cp    "$FULLSRC/edksetup.sh" "$DST/edksetup.sh"
+
+# compile BaseTools
+make -C "$FULLSRC/BaseTools"
+
+# remove object files
+find "$FULLSRC/BaseTools" -name "*.o"  -o -name "*.pyc" -o -name "*.d" -o -name "*.o" | xargs rm
+
+# copy BaseTools
+cp -R "$FULLSRC/BaseTools" "$DST/BaseTools"
