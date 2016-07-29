@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <stdint.h>
+#include <fcntl.h>
 
 extern char **environ;
 static const char* toolchain_prefix;
@@ -63,6 +64,12 @@ static int is_directory(const char *path)
     int rc = stat(path, &path_stat);
     if (rc) return -ENOENT;
     return S_ISDIR(path_stat.st_mode);
+}
+
+static int node_exists(const char *path)
+{
+    struct stat path_stat;
+    return !stat(path, &path_stat);
 }
 
 static int util_exec(char **args)
@@ -274,6 +281,37 @@ static const char* get_tool_arch(void) {
     return NULL;
 }
 
+static int util_cp(const char *source, const char *target)
+{
+    int rc;
+    int i = 0;
+    char *par[64];
+    char *buf_source = NULL, *buf_target = NULL;
+
+    // tool
+    par[i++] = "/usr/bin/cp";
+
+    // source
+    buf_source = strdup(source);
+    par[i++] = buf_source;
+
+    // target
+    buf_target = strdup(target);
+    par[i++] = buf_target;
+
+    // end
+    par[i++] = (char *)0;
+
+    // exec
+    rc = util_exec(par);
+
+    // cleanup
+    free(buf_target);
+    free(buf_source);
+
+    return rc;
+}
+
 int main(int argc, const char **argv)
 {
     char c;
@@ -303,6 +341,10 @@ int main(int argc, const char **argv)
         return 1;
     }
 
+    cwd = getcwd(NULL, 0);
+    if(!cwd)
+        die("can't get working directory");
+
     // validate args
     if(!arg_srcdir)
         diehelp("no source path given");
@@ -315,14 +357,49 @@ int main(int argc, const char **argv)
         edk2_path = strdup("/opt/edk2");
     if(!edk2_path) die("out of memory");
 
+    // get base dsc
+    rc = snprintf(pathbuf, sizeof(pathbuf), "%s/%s", arg_srcdir, arg_dscfile);
+    if(rc<0 || (size_t)rc>=sizeof(pathbuf))
+        die("can't build DSC file path");
+    if(!node_exists(pathbuf)) {
+        rc = snprintf(pathbuf, sizeof(pathbuf), "%s/BaseTools/dsc_templates/%s.dsc", edk2_path, arg_dscfile);
+        if(rc<0 || (size_t)rc>=sizeof(pathbuf))
+            die("can't build DSC file path");
+
+        if(!node_exists(pathbuf))
+            die("DSC doesn't exist");
+
+        arg_dscfile = strdup(pathbuf);
+
+        // we need to add the inf to the components section
+        if(arg_inffile) {
+            // copy file to build dir
+            rc = snprintf(pathbuf, sizeof(pathbuf), "%s/build.dsc", cwd);
+            if(rc<0 || (size_t)rc>=sizeof(pathbuf))
+                die("can't build DSC file path");
+            rc = util_cp(arg_dscfile, pathbuf);
+            if(rc) die("can't copy template dsc to build dir");
+
+            // use the new copy
+            free((void*)arg_dscfile);
+            arg_dscfile = strdup(pathbuf);
+
+            char character;
+            int fd = open(arg_dscfile, O_WRONLY|O_APPEND);
+            if(fd<0) die("can't open dsc file");
+
+            character = '\n';
+            write(fd, &character, 1);
+            write(fd, arg_inffile, strlen(arg_inffile));
+
+            close(fd);
+        }
+    }
+
     // resolve srcdir
     srcdir = realpath(arg_srcdir, NULL);
     if(!srcdir)
         diehelp("can't resolve source path");
-
-    cwd = getcwd(NULL, 0);
-    if(!cwd)
-        die("can't get working directory");
 
     // create Conf directory
     rc = is_directory("Conf");
