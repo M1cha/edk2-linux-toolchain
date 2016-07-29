@@ -321,6 +321,7 @@ int main(int argc, const char **argv)
     char* npkgpath = NULL;
     int rc;
     char pathbuf[PATH_MAX];
+    char pathbuf2[PATH_MAX];
     char* execline = NULL;
     
     // init popt
@@ -384,13 +385,41 @@ int main(int argc, const char **argv)
             free((void*)arg_dscfile);
             arg_dscfile = strdup(pathbuf);
 
+            // open dsc
             char character;
             int fd = open(arg_dscfile, O_WRONLY|O_APPEND);
             if(fd<0) die("can't open dsc file");
 
+            // write INF component
             character = '\n';
             write(fd, &character, 1);
             write(fd, arg_inffile, strlen(arg_inffile));
+
+            // make copy without file extension
+            char* infdup = strdup(arg_inffile);
+            if(!infdup) die("out of memory");
+            char* lastpt = strrchr(infdup, '.');
+            if(!lastpt) die("invalid INF file");
+            *lastpt = 0;
+
+            // create DSC filename
+            rc = snprintf(pathbuf, sizeof(pathbuf), "%s.dsc.inc", infdup);
+            if(rc<0 || (size_t)rc>=sizeof(pathbuf))
+                die("can't build DSC file path");
+
+            // create DSC filename (absolute path)
+            rc = snprintf(pathbuf2, sizeof(pathbuf2), "%s/%s", arg_srcdir, pathbuf);
+            if(rc<0 || (size_t)rc>=sizeof(pathbuf2))
+                die("can't build full DSC file path");
+
+            // include that file
+            if(node_exists(pathbuf2)) {
+                const char* prefix = "!include ";
+                character = '\n';
+                write(fd, &character, 1);
+                write(fd, prefix, strlen(prefix));
+                write(fd, pathbuf, strlen(pathbuf));
+            }
 
             close(fd);
         }
