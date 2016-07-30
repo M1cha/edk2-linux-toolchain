@@ -13,7 +13,6 @@
 extern char **environ;
 static const char* toolchain_prefix;
 
-static char *edk2_path = "/media/Data/repositories/git/efidroid/testing/linuxtoolchain/edk2_min";
 static const char *arg_srcdir = NULL;
 static const char *arg_dscfile = NULL;
 static const char *arg_inffile = NULL;
@@ -323,6 +322,7 @@ int main(int argc, const char **argv)
     char pathbuf[PATH_MAX];
     char pathbuf2[PATH_MAX];
     char* execline = NULL;
+    char *edk2_path = NULL;
     
     // init popt
     optCon = poptGetContext(NULL, argc, argv, optionsTable, 0);
