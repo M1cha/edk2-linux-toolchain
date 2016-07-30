@@ -71,17 +71,22 @@ static int node_exists(const char *path)
     return !stat(path, &path_stat);
 }
 
-static int util_exec(char **args)
+static int util_exec(char **args, int replace)
 {
     pid_t pid;
     int status = 0;
+
+    if(replace) {
+        execve(args[0], args, environ);
+        exit(errno);
+    }
 
     pid = vfork();
     if (pid==0) {
         status = execve(args[0], args, environ);
         exit(errno);
     } else if(pid<0) {
-        die("execve error");
+        die("vfork error");
     } else {
         if(waitpid(pid, &status, 0)==-1)
             die("waitpid error");
@@ -148,7 +153,7 @@ static int util_exec_getbuf(char **args, char** outbuf)
     return status;
 }
 
-static int util_shell(const char *_cmd)
+static int util_shell(const char *_cmd, int replace)
 {
     char *par[64];
     int i = 0;
@@ -168,7 +173,7 @@ static int util_shell(const char *_cmd)
     // end
     par[i++] = (char *)0;
 
-    rc = util_exec(par);
+    rc = util_exec(par, replace);
 
     // free arguments
     free(cmd);
@@ -302,7 +307,7 @@ static int util_cp(const char *source, const char *target)
     par[i++] = (char *)0;
 
     // exec
-    rc = util_exec(par);
+    rc = util_exec(par, 0);
 
     // cleanup
     free(buf_target);
@@ -516,7 +521,7 @@ int main(int argc, const char **argv)
                  );
     if(rc<0 || (size_t)rc>=execline_len)
         die("can't build edk2 exec line");
-    rc = util_shell(execline);
+    rc = util_shell(execline, 1);
     
     // cleanup
     free(execline);
