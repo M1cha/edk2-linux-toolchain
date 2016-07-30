@@ -222,15 +222,15 @@ static const char* get_tool_name(void) {
         die("can't build toolname command");
 
     rc = util_shell_getbuf(cmdbuf, &buf);
-    if(rc) return "GCC44";
+    if(rc) die("can't run command");
 
     size_t bufsz = strlen(buf);
-    if(bufsz<1) return "GCC44";
+    if(bufsz<1) die("can't detect gcc version");
     if(buf[bufsz-1]=='\n')
         buf[bufsz-1] = 0;
 
     for (count=0; (token = strsep(&buf, ".")); count++) {
-        if(count>3) return "GCC44";
+        if(count>3) die("can't detect gcc version");
 
         version[count] = atoi(token);
     }
@@ -248,6 +248,7 @@ static const char* get_tool_name(void) {
     if(version[0]==5 || version[0]==6)
         return "GCC49";
 
+    die("unsupported gcc version");
     return NULL;
 }
 
@@ -262,10 +263,10 @@ static const char* get_tool_arch(void) {
         die("can't build toolname command");
 
     rc = util_shell_getbuf(cmdbuf, &buf);
-    if(rc) return NULL;
+    if(rc) die("can't run command");
 
     size_t bufsz = strlen(buf);
-    if(bufsz<1) return NULL;
+    if(bufsz<1) die("can't detect gcc architecture");
     if(buf[bufsz-1]=='\n')
         buf[bufsz-1] = 0;
 
@@ -282,6 +283,7 @@ static const char* get_tool_arch(void) {
         break;
     }
 
+    die("unsupported gcc architecture");
     return NULL;
 }
 
