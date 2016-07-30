@@ -17,6 +17,7 @@ static const char *arg_srcdir = NULL;
 static const char *arg_dscfile = NULL;
 static const char *arg_inffile = NULL;
 static const char *arg_archname = NULL;
+static const char *arg_buildtype = "RELEASE";
 static int arg_jobs = 1;
 static int arg_silent = 0;
 static int arg_quiet = 0;
@@ -25,6 +26,10 @@ static struct poptOption optionsTable[] = {
     {
         "jobs", 'j', POPT_ARG_INT, &arg_jobs, 0,
         "Allow N jobs at once; 1 jobs with no arg.", "N"
+    },
+    {
+        "buildtype", 'b', POPT_ARG_STRING, &arg_buildtype, 0,
+        "Build type to use e.g. RELEASE or DEBUG.", "NAME"
     },
     {
         "arch", 'a', POPT_ARG_STRING, &arg_archname, 0,
@@ -500,10 +505,11 @@ int main(int argc, const char **argv)
     setenv(pathbuf, toolchain_prefix, 1);
 
     // start the build process
-    const char* execline_fmt = "source \"%s/edksetup.sh\" && build -n %u -b RELEASE -a %s -t %s -p %s %s %s %s %s %s";
+    const char* execline_fmt = "source \"%s/edksetup.sh\" && build -n %u -b %s -a %s -t %s -p %s %s %s %s %s %s";
     size_t execline_len = strlen(execline_fmt);
     execline_len += strlen(edk2_path);    // edksetup.sh path
     execline_len += 10;                   // jobs
+    execline_len += strlen(arg_buildtype);// buildtype
     execline_len += strlen(arg_archname); // arch
     execline_len += strlen(toolname);     // toolname
     execline_len += strlen(arg_dscfile);  // DSC
@@ -515,7 +521,7 @@ int main(int argc, const char **argv)
     execline = malloc(execline_len);
     if(!execline)
         die("out of memory");
-    rc = snprintf(execline, execline_len, execline_fmt, edk2_path, arg_jobs, arg_archname, toolname, arg_dscfile,
+    rc = snprintf(execline, execline_len, execline_fmt, edk2_path, arg_jobs, arg_buildtype, arg_archname, toolname, arg_dscfile,
                   arg_inffile?"-m":"", arg_inffile?:"",
                   arg_silent?"-s":"",
                   arg_quiet?"-q":"",
